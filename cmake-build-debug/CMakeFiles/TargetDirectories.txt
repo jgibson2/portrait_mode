@@ -1,0 +1,3 @@
+/home/john/Documents/School/CSE559/portrait_mode/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/john/Documents/School/CSE559/portrait_mode/cmake-build-debug/CMakeFiles/portrait_mode.dir
+/home/john/Documents/School/CSE559/portrait_mode/cmake-build-debug/CMakeFiles/edit_cache.dir

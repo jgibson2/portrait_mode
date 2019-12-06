@@ -1,0 +1,12 @@
+[submodule "deps/nng"]
+	path = deps/nng
+	url = https://github.com/nanomsg/nng.git
+[submodule "deps/nngpp"]
+	path = deps/nngpp
+	url = https://github.com/cwzx/nngpp.git
+[submodule "deps/concurrentqueue"]
+	path = deps/concurrentqueue
+	url = https://github.com/cameron314/concurrentqueue.git
+[submodule "deps/monodepth2"]
+	path = deps/monodepth2
+	url = https://github.com/nianticlabs/monodepth2.git
