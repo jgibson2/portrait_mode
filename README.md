@@ -1,6 +1,6 @@
 You will need various things to compile and use this:
 
-* OpenCV4
+* OpenCV4 + opencv4-contrib
 
 * glog
 
