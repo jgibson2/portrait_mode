@@ -23,7 +23,7 @@ private:
     // stereo matching properties
     const int property_disparity_min = -50;
     const int property_disparity_max = 50;
-    const stereo_matcher_birchfield_tomasi::block_filter_size property_stereo_block_filter = stereo_matcher_birchfield_tomasi::block_filter_size::size_5x5;
+    const stereo_matcher_birchfield_tomasi::block_filter_size property_stereo_block_filter = stereo_matcher_birchfield_tomasi::block_filter_size::size_15x15;
 
     // solver properties
     const int property_solver_nb_iterations = 500;

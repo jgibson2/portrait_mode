@@ -2,6 +2,13 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/deps/concurrentqueue" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/deps/fast_bilateral_space_stereo" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/deps/loom-threads" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/deps/loom-threads/external/concurrentqueue" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/deps/monodepth2" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/deps/nng" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/deps/nngpp" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/loom-threads" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/loom-threads/external/concurrentqueue" vcs="Git" />
   </component>

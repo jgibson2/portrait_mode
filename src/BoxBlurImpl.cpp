@@ -29,11 +29,12 @@ void BoxBlurImpl::operator()(std::shared_ptr<cv::Mat> img, std::shared_ptr<cv::M
         cv::Mat t[] = {mask, mask, mask};
         merge(t, 3, mask3Channel);
         cv::multiply(fimg, mask3Channel, blurredImg);
-        std::cout << "Found " << cv::countNonZero(mask) << " elements" << std::endl << std::flush;
+//        std::cout << "Found " << cv::countNonZero(mask) << " elements" << std::endl << std::flush;
 
         //define disk radius = |depth - targetDepth|
         int radius = d - deadZone;
-        if(d <= deadZone) {
+        radius = (int)std::round(_m * radius);
+        if (d <= deadZone) {
             radius = 1;
         }
         radius += 1 - (radius % 2);

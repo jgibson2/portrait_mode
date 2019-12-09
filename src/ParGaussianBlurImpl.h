@@ -10,7 +10,7 @@
 
 class ParGaussianBlurImpl : public BlurImpl {
 public:
-    explicit ParGaussianBlurImpl(float sigma);
+    explicit ParGaussianBlurImpl(float blurStrength, float sigma = 10.0);
     void operator()(std::shared_ptr<cv::Mat> img, std::shared_ptr<cv::Mat> depthMap, int targetDepth, unsigned int deadZone) override;
 public:
     float _sigma;

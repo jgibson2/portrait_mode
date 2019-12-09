@@ -91,4 +91,4 @@ void ParGaussianBlurImpl::operator()(std::shared_ptr<cv::Mat> img, std::shared_p
     *img = output;
 }
 
-ParGaussianBlurImpl::ParGaussianBlurImpl(float sigma) : _sigma(sigma) {}
+ParGaussianBlurImpl::ParGaussianBlurImpl(float blurStrength, float sigma) : _sigma(blurStrength * sigma) {}

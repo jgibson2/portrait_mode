@@ -10,8 +10,10 @@
 
 class BoxBlurImpl : public BlurImpl {
 public:
-    BoxBlurImpl()= default;
+    explicit BoxBlurImpl(float m) : _m(m) {}
     void operator()(std::shared_ptr<cv::Mat> img, std::shared_ptr<cv::Mat> depthMap, int targetDepth, unsigned int deadZone) override;
+private:
+    float _m;
 };
 
 
