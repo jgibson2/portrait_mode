@@ -11,7 +11,7 @@
 
 class StereoSGBMImpl : public DepthMapImpl {
 public:
-    explicit StereoSGBMImpl(int minDisparity = 0, int numDisparities = 64, int blockSize = 9, int P1 = 1, int P2 = 32);
+    explicit StereoSGBMImpl(int minDisparity = -32, int numDisparities = 64, int blockSize = 9, int P1 = 1, int P2 = 32);
 
     std::shared_ptr<cv::Mat> operator()(std::shared_ptr<cv::Mat> img1, std::shared_ptr<cv::Mat> img2) override;
 private:

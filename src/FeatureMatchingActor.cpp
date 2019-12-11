@@ -97,6 +97,7 @@ void FeatureMatchingActor::viewFilteredMatches(const std::shared_ptr<cv::Mat> &i
     cv::namedWindow( "Display window", cv::WINDOW_AUTOSIZE );// Create a window for display.
     cv::imshow( "Display window", res );                   // Show our image inside it.
     cv::waitKey(0);
+    cv::imwrite("feature_matches.jpg", res);
 
     _kpts1.clear(); _kpts2.clear(); _nn_matches.clear(); _filtered_matches.clear();
 }

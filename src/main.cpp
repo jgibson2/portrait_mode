@@ -65,8 +65,8 @@ int main(int argc, char** argv) {
             std::cout << "Transformation x: " << transformation.value().x << " | Transformation y: " << transformation.value().y << std::endl;
             FeatureMatchingActor::shiftImage(*img2, 0, -1*transformation.value().y);
         }
-        //featureMatcher.viewFilteredMatches(img1, img2);
-        auto depthMap = depthMapActor3.getDepthMap(img1, img2);
+        featureMatcher.viewFilteredMatches(img1, img2);
+        auto depthMap = depthMapActor1.getDepthMap(img1, img2);
         if(!depthMap.has_value()) {
             return 1;
         }
@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
         auto img1_blur1 = std::make_shared<cv::Mat>(cv::imread(argv[1]));
 
         std::cout << "Face depth: " << faceDepth << std::endl;
-        blurActor1.blur(img1_blur1, depthMap.value(), (int)std::round(faceDepth), deadZone);
+        blurActor2.blur(img1_blur1, depthMap.value(), (int)std::round(faceDepth), deadZone);
         std::cout << "Blurred with strength " << blurStrength << " and dead zone " << deadZone << std::endl;
 
         cv::namedWindow( "Blurred", cv::WINDOW_AUTOSIZE );// Create a window for display.
