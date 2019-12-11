@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
         auto img1_blur1 = std::make_shared<cv::Mat>(cv::imread(argv[1]));
 
         std::cout << "Face depth: " << faceDepth << std::endl;
-        blurActor2.blur(img1_blur1, depthMap.value(), (int)std::round(faceDepth), deadZone);
+        blurActor1.blur(img1_blur1, depthMap.value(), (int)std::round(faceDepth), deadZone);
         std::cout << "Blurred with strength " << blurStrength << " and dead zone " << deadZone << std::endl;
 
         cv::namedWindow( "Blurred", cv::WINDOW_AUTOSIZE );// Create a window for display.

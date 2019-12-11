@@ -1,7 +1,7 @@
 \documentclass[10pt,twocolumn,letterpaper]{article}
 \usepackage[margin=2.5cm]{geometry}
 \usepackage{times,epsfig,graphicx,amsmath,amssymb}
-\usepackage{algpseudocode, subcaption, float}
+\usepackage{algorithm, algorithmicx, algpseudocode, subcaption, float}
 \usepackage[breaklinks=true,colorlinks=true,bookmarks=false]{hyperref}
 \date{}
 
@@ -26,13 +26,13 @@ to achieve this effect. However, the small size and wide angle lens of personal 
 and thus much work has been done to recreate this effect using postprocessing. This project uses paired images in relatively stereo configuration
 (e.g. not completely vertically aligned) to compute a depth map, detects faces in the input images to determine the face disparity value, and
 then blurs the input image based on the computed disparities. In addition, different methods of computing the disparity map and blurring the
-output image are tested.
+output image are tested and compared.
 
 }\end{center}
 
 \section{Introduction}
 
-\par Bokeh, or background defocus, has long been a staple of photographic portraits. Certain lenses and camera systems are prized for their ability
+\par Bokeh (BOW-keh), or background defocus, has long been a staple of photographic portraits. Certain lenses and camera systems are prized for their ability
 to render out-of-focus elements of a frame in an aesthetically pleasing way, and the most prized lenses can sell for thousands of dollars. Professional
 camera systems achieve pleasing and strong background defocus using large sensor sizes and lenses with wide apertures and long focal lengths.
 
@@ -40,7 +40,7 @@ camera systems achieve pleasing and strong background defocus using large sensor
     \begin{center}
         \includegraphics[width=3.0in]{resources/bokeh_example.jpg} % Place holder, replace with \includegraphics, etc.
     \end{center}
-    \caption{A portrait with strong bokeh, taken at a focal length of 56mm, an aperture of 1.2, and a sensor size of 23.5 mm x 15.6 mm.}
+    \caption{\small A portrait with strong bokeh, taken at a focal length of 56mm, an aperture of 1.2, and a sensor size of 23.5 mm x 15.6 mm. Note the large light balls in the background, which is a characteristic of true bokeh.}
     \label{fig:bokehexample}
 \end{figure*}
 
@@ -72,11 +72,13 @@ Numerous pre-trained models are available, and for this work we use a network ca
 
 \section{Proposed Approach}
 
-\begin{figure}[!t]
+\begin{figure}[t]
     \begin{center}
-        \includegraphics[width=3.0in]{resources/portrait_mode.png} % Place holder, replace with \includegraphics, etc.
+        \includegraphics[width=2.95in]{resources/portrait_mode.png} % Place holder, replace with \includegraphics, etc.
     \end{center}
-    \caption{Proposed pipeline for semi-stereo portrait mode.}
+    \caption{Proposed pipeline for semi-stereo portrait mode. Two unaligned input images are run through a face detection algorithm to find the location of the face and are aligned using feature matching.
+    A depth map is then generated from the aligned images using a stereo disparity matching algorithm such as SGBM or Fast Bilateral Stereo Matching. Finally, the output is blurred, with regions farther away
+    from the calculated disparity of the face blurred with a higher intensity.}
     \label{fig:pipeline}
 \end{figure}
 
@@ -109,14 +111,18 @@ Three different methods of stereo matching were tested:
           Small blurs in bilateral space are equivalent to large, edge-aware blurs in pixel space, as the reinterpolation of the sparse points leads to close, similar regions of points containing the
           same blurring value. Optimization is performed in the bilateral space, with a loss function minimizing differences in pixel disparities based on their spacial and coloric affinities with some
           smoothness constraint. A domain transform filter is applied on the output for smoothing.
-    \item Monodepth2 \cite{monodepth2}, an open-source monocular depth estimation network (only run on image 1).
+    \item Monodepth2 \cite{monodepth2}, an open-source monocular depth estimation network (only run on image 1). A simple server was implemented in Python using pynng and communicated with using nngpp in C++.
 \end{enumerate}
 
 Once the depth map for image 1 is computed, the depth of the face is calculated by averaging the depth values of 9 points in a 3x3 grid separated by $n$ pixels (default 100) that is centered in the middle of the detected face bounding box and rounded to the nearest integer.
 
 \subsection{Hierarchical Disparity-Based Blurring}
 
-A modified blurring algorithm of Barron et al. \cite{barron_adams_shih_hernandez_2015} was implemented and used for disparity-based blurring, which is outlined here:
+\par A modified blurring algorithm of Barron et al. \cite{barron_adams_shih_hernandez_2015} was implemented and used for disparity-based blurring, which is outlined in Algorithm \ref{alg:blur}.
+
+\begin{algorithm}[h]
+    \caption{Hierarchical Disparity-Based Blurring}
+    \label{alg:blur}
 \begin{algorithmic}
     \State $I_n \gets 0$
     \State $I_d \gets 0$
@@ -133,6 +139,7 @@ A modified blurring algorithm of Barron et al. \cite{barron_adams_shih_hernandez
     \EndFor
     \State $I \gets I_n / I_d$
 \end{algorithmic}
+\end{algorithm}
 
 Where $I$ is the input image, $D$ is the input disparity map, $d_{\textit{face}}$ is the disparity value of the face, $m$ is the blur strength, $z$ is the dead zone in which not to blur, $\times$ denotes element-wise multiplication, and $/$ denotes element-wise division.
 
@@ -144,89 +151,14 @@ Three different blurring methods were tested:
     \item Disc blurring. This method is slowest, but the closest physical approximation to real bokeh. It is simply blurring with a uniform disk of radius $r$.
 \end{enumerate}
 
-Parallelized version of Gaussian blurring and disc blurring were implemented to achieve speedup.
+Parallelized version of Gaussian blurring and disc blurring were implemented to achieve speedup, taking advantage of the independence of the blurring operations for each disparity value.
 
 \section{Experimental Results}
 
 \par Test images from Figure \ref{fig:pipeline} were used as input, with a middle matching percentage of 50\%, a blur strength of 0.25 and a dead zone of 40. Fast bilateral stereo used 100 disparities with minimum disparity = -50 and a 15x15
 matching grid, and used the Ceres convex solver to solve the bilateral optimization problem. SGBM used 64 disparities, with minimum disparity = -32, $P1 = 1, P2 = 32$, and a block size of 9. Monodepth used the pretrained mono\_1024x320 model with default options.
+Outputs are shown in Figure \ref{fig:outputs} for various depth maps and blurring schemes, along with computed depth maps for each method.
 Code and sample outputs are available at \url{https://github.com/jgibson2/portrait_mode}.
-\begin{figure}[!t]
-    \begin{center}
-        \includegraphics[width=3.0in]{bin/feature_matches.jpg} % Place holder, replace with \includegraphics, etc.
-    \end{center}
-    \caption{Feature matches between image 1 and 2.}
-    \label{fig:features}
-\end{figure}
-
-\begin{figure*}[t!]
-    \begin{subfigure}[t!]{\textwidth}
-    \centering
-    \begin{subfigure}[t]{0.33\textwidth}
-        \centering
-        \includegraphics[width=1.2in]{bin/output_FBIL.jpg}
-        \caption{Output using fast bilateral stereo}
-    \end{subfigure}%
-    ~
-    \begin{subfigure}[t]{0.33\textwidth}
-        \centering
-        \includegraphics[width=1.2in]{bin/output_monodepth.jpg}
-        \caption{Output using monodepth}
-    \end{subfigure}%
-    ~
-    \begin{subfigure}[t]{0.33\textwidth}
-        \centering
-        \includegraphics[width=1.2in]{bin/output_SGBM.jpg}
-        \caption{Output using SGBM}
-    \end{subfigure}
-    \caption*{Output images using disc blurring with various methods}
-    \end{subfigure}
-
-    \begin{subfigure}[t!]{\textwidth}
-    \centering
-    \begin{subfigure}[t!]{0.33\textwidth}
-        \centering
-        \includegraphics[width=1.2in]{bin/depth_map_FBIL.jpg}
-        \caption{Depth map output from fast bilateral stereo}
-    \end{subfigure}%
-    ~
-    \begin{subfigure}[t!]{0.33\textwidth}
-        \centering
-        \includegraphics[width=1.2in]{bin/depth_map_monodepth.jpg}
-        \caption{Depth map output from monodepth}
-    \end{subfigure}%
-    ~
-    \begin{subfigure}[t!]{0.33\textwidth}
-        \centering
-        \includegraphics[width=1.2in]{bin/depth_map2_SGBM.jpg}
-        \caption{Depth map output from SGBM}
-    \end{subfigure}
-    \caption*{Depth maps using various methods}
-    \end{subfigure}
-
-    \begin{subfigure}[t!]{\textwidth}
-    \centering
-    \begin{subfigure}[t!]{0.33\textwidth}
-        \centering
-        \includegraphics[width=1.2in]{bin/output_discblur.jpg}
-        \caption{Output using disc blur}
-    \end{subfigure}%
-    ~
-    \begin{subfigure}[t!]{0.33\textwidth}
-        \centering
-        \includegraphics[width=1.2in]{bin/output_gaussianblur.jpg}
-        \caption{Output using Gaussian blur}
-    \end{subfigure}%
-    ~
-    \begin{subfigure}[t!]{0.33\textwidth}
-        \centering
-        \includegraphics[width=1.2in]{bin/output_boxblur.jpg}
-        \caption{Output using box filter blur}
-    \end{subfigure}
-    \caption*{Output images using fast bilateral stereo with various blurs}
-    \end{subfigure}
-    \label{fig:outputs}
-\end{figure*}
 
 \par In general, the fast bilateral stereo method performed well, but was confused by highly contrasted objects at similar depths and consequently any specular highlights.
 In addition, the optimization in the bilateral space would occasionally not converge despite the convexivity claim of Barron et al., leading to incorrect depths.
@@ -235,6 +167,98 @@ as opposed to locations, this method may outperform fast bilateral method in bot
 with many isolated patches of different depths that only vaguely followed true object outlines. With better tuning its performance may be improved, but it lags far
 behind fast bilateral stereo and monodepth. However, all these methods failed in difficult cases with sparse backgrounds. An example output with sparse background is given
 in Figure \ref{fig:output2}. Please see supplemental materials on GitHub for examples.
+
+\par Compared to the image with true bokeh, the disc blur produced the most realistic outputs. However, the characteristic "bokeh balls" present in the true image are
+difficult to reproduce. More work must be done to accurately model the point light sources and to blur them appropriately. In addition, specular highlights give the model
+trouble, and therefore histogram equalization could be performed before depth map computation. In addition, more smoothing and filtering of depth maps could be applied,
+possibly using a depth map prior on patches that could be applied as a Bayesian approach to denoising and smoothing.
+
+\section{Conclusion}
+
+Although cell phone sensors and lenses physically limited by size, post-processing software for cell phone cameras is coming closer and closer to emulating professional photographic systems. In this work, we present a method for simulating "bokeh"
+using multiple images that are not necessarily even aligned. Along with comparisons of different depth mapping and blurring algorithms, this work provides an easy-to-use, publically available tool for
+producing this effect, hopefully helping to break the barrier between professional and hobbyist photographers and making portraiture more accessible to all.
+
+\begin{figure}[!t]
+    \begin{center}
+        \includegraphics[width=3.0in]{bin/feature_matches.jpg} % Place holder, replace with \includegraphics, etc.
+    \end{center}
+    \caption{\small Feature matches between image 1 and 2, used to calculate the median transform for alignment.}
+    \label{fig:features}
+\end{figure}
+
+\begin{figure*}[t!]
+    \begin{subfigure}[t!]{\textwidth}
+        \centering
+        \begin{subfigure}[t]{0.33\textwidth}
+            \centering
+            \includegraphics[width=1.2in]{bin/output_FBIL.jpg}
+            \caption{Output using fast bilateral stereo}
+        \end{subfigure}%
+        ~
+        \begin{subfigure}[t]{0.33\textwidth}
+            \centering
+            \includegraphics[width=1.2in]{bin/output_monodepth.jpg}
+            \caption{Output using monodepth}
+        \end{subfigure}%
+        ~
+        \begin{subfigure}[t]{0.33\textwidth}
+            \centering
+            \includegraphics[width=1.2in]{bin/output_SGBM.jpg}
+            \caption{Output using SGBM}
+        \end{subfigure}
+        \caption*{Output images using disc blurring with various methods}
+    \end{subfigure}
+
+    \begin{subfigure}[t!]{\textwidth}
+        \centering
+        \begin{subfigure}[t!]{0.33\textwidth}
+            \centering
+            \includegraphics[width=1.2in]{bin/depth_map_FBIL.jpg}
+            \caption{Depth map output from fast bilateral stereo}
+        \end{subfigure}%
+        ~
+        \begin{subfigure}[t!]{0.33\textwidth}
+            \centering
+            \includegraphics[width=1.2in]{bin/depth_map_monodepth.jpg}
+            \caption{Depth map output from monodepth}
+        \end{subfigure}%
+        ~
+        \begin{subfigure}[t!]{0.33\textwidth}
+            \centering
+            \includegraphics[width=1.2in]{bin/depth_map2_SGBM.jpg}
+            \caption{Depth map output from SGBM}
+        \end{subfigure}
+        \caption*{Depth maps using various methods}
+    \end{subfigure}
+
+    \begin{subfigure}[t!]{\textwidth}
+        \centering
+        \begin{subfigure}[t!]{0.33\textwidth}
+            \centering
+            \includegraphics[width=1.2in]{bin/output_discblur.jpg}
+            \caption{Output using disc blur}
+        \end{subfigure}%
+        ~
+        \begin{subfigure}[t!]{0.33\textwidth}
+            \centering
+            \includegraphics[width=1.2in]{bin/output_gaussianblur.jpg}
+            \caption{Output using Gaussian blur}
+        \end{subfigure}%
+        ~
+        \begin{subfigure}[t!]{0.33\textwidth}
+            \centering
+            \includegraphics[width=1.2in]{bin/output_boxblur.jpg}
+            \caption{Output using box filter blur}
+        \end{subfigure}
+        \caption*{Output images using fast bilateral stereo with various blurs}
+    \end{subfigure}
+    \caption{\small Example outputs using different blurring methods and stereo disparity matching algorithms, along with computed depth maps.
+    Fast Bilateral Stereo Matching overall performed the best, but Monodepth2 performed surprisingly well given the automotive training data source.
+    Disc blurring produced the most visually pleasing effect and was the closest to natural bokeh, but was computationally expensive and did not produce
+    the characteristic "bokeh balls."}
+    \label{fig:outputs}
+\end{figure*}
 
 \begin{figure*}[!t]
     \begin{subfigure}[t!]{\textwidth}
@@ -258,20 +282,9 @@ in Figure \ref{fig:output2}. Please see supplemental materials on GitHub for exa
         \end{subfigure}
         \caption*{Output images using disc blurring with various methods on adversarial input.}
     \end{subfigure}
-    \caption{Output from adversarial input. Input has sparse background, leading to extreme differences in disparity. In addition, the scene does not hold to the bilateral constraints, as the walls are not parallel to the sensor plane.}
+    \caption{\small Output from adversarial input. Input has sparse background, leading to extreme differences in disparity. In addition, the scene does not adhere to the enforced bilateral constraints, as the walls are not parallel to the sensor plane.}
     \label{fig:output2}
 \end{figure*}
-
-\par Compared to the image with true bokeh, the disc blur produced the most realistic outputs. However, the characteristic "bokeh balls" present in the true image are
-difficult to reproduce. More work must be done to accurately model the point light sources and to blur them appropriately. In addition, specular highlights give the model
-trouble, and therefore histogram equalization could be performed before depth map computation. In addition, more smoothing and filtering of depth maps could be applied,
-possibly using a depth map prior on patches that could be applied as a Bayesian approach to denoising and smoothing.
-
-\section{Conclusion}
-
-Although cell phone sensors and lenses physically limited by size, post-processing software for cell phone cameras is coming closer and closer to emulating professional photographic systems. In this work, we present a method for simulating "bokeh"
-using multiple images that are not necessarily even aligned. Along with comparisons of different depth mapping and blurring algorithms, this work provides an easy-to-use, publically available tool for
-producing this effect, hopefully helping to break the barrier between professional and hobbyist photographers and making portraiture more accessible to all.
 
 \section*{Acknowledgments}
 
